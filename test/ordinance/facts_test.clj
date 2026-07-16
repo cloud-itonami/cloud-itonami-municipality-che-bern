@@ -1,0 +1,26 @@
+(ns ordinance.facts-test
+  (:require [clojure.string :as str]
+            [clojure.test :refer [deftest is]]
+            [ordinance.facts :as facts]))
+
+(deftest bern-has-spec-basis
+  (let [sb (facts/spec-basis "bern")]
+    (is (= 2 (count sb)))
+    (is (every? #(str/starts-with? (:ordinance/url %) "https://") sb))
+    (is (every? :ordinance/number sb))))
+
+(deftest unknown-municipality-has-no-spec-basis
+  (is (nil? (facts/spec-basis "zurich")))
+  (is (nil? (facts/spec-basis "zzz"))))
+
+(deftest coverage-is-honest
+  (let [c (facts/coverage ["bern" "zurich"])]
+    (is (= 2 (:requested c)))
+    (is (= 1 (:covered c)))
+    (is (= ["zurich"] (:missing-municipalities c)))))
+
+(deftest by-topic-filters
+  (is (= ["bern.bo-2006-bauordnung"]
+         (mapv :ordinance/id (facts/by-topic "bern" :construction))))
+  (is (empty? (facts/by-topic "bern" :labor)))
+  (is (empty? (facts/by-topic "zurich" :construction))))
